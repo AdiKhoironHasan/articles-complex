@@ -1,0 +1,69 @@
+version: "3"
+
+services:
+  db-postgres:
+    image: postgres:14.5
+    container_name: db-postgres
+    restart: always
+    environment:
+      - POSTGRESQL_ENABLE_TLS=no
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=complex
+    ports:
+      - 54321:5432
+    expose:
+      - 5432
+    networks:
+      - my-network
+
+  db-redis:
+    image: redis:6
+    container_name: db-redis
+    restart: always
+    command: /bin/sh -c "redis-server --requirepass secret_password"
+    ports:
+      - 63799:6379
+    expose:
+      - 6379
+    networks:
+      - my-network
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app-complex
+    depends_on:
+      - db-postgres
+    ports:
+      - 8000:8000
+    # restart untill unless-stopped
+    restart: unless-stopped
+    # use network docker container
+    networks:
+      - my-network
+
+  migrate:
+    image: migrate/migrate
+    container_name: db-migration
+    networks:
+      - my-network
+    volumes:
+      - ./pkg/database/migrations:/database
+    command: [
+        "-path",
+        "/database",
+        "-database",
+        "postgres://postgres:postgres@db-postgres:5432/complex?sslmode=disable", # fill with your db config data postgres://dbuser:dbpasswd@dbhost:dbport/dbname?sslmode=disable"
+        "up",
+      ]
+    # restart until successfully migrate
+    restart: on-failure
+    links:
+      - db-postgres
+    depends_on:
+      - db-postgres
+
+# create network
+networks:
+  my-network:

@@ -1,0 +1,21 @@
+# config to configuration this service
+appName: articles-complex
+
+server:
+  port: "8000"
+  log_level: 3
+
+db:
+  postgre:
+    host: db-postgres
+    port: 5432
+    dbname: complex
+    user: postgres
+    password: postgres
+  redis:
+    host: db-redis
+    port: 6379
+    password: secret_password
+
+api:
+  secret_key: the_secret_key
